@@ -5,35 +5,105 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NestedScrollView(
-      headerSliverBuilder: (context, innerBoxIsScrolled) {
-        return [
-          SliverAppBar(
-            title:const Text("Home"),
-            floating: true,  // AppBar will appear when scrolling down.
-            pinned: true,    // Keep AppBar visible when scrolling up.
-            snap: true,      // Snap behavior when scrolling up/down.
-            expandedHeight: 200.0,
-            flexibleSpace: FlexibleSpaceBar(
-              title:const Text("Home"),
-              background: Image.asset(
-                'assets/home_tab_logo.png',  // Home tab logo
-                fit: BoxFit.cover,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Facebook-fake Post'),
+        backgroundColor: Colors.blue,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: AssetImage('assets/flutter_logo.png'),
+                          radius: 25,
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Flutter',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '2 giờ trước',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Flutter là một framework mã nguồn mở được phát triển bởi Google, giúp xây dựng ứng dụng di động, web và desktop từ một codebase duy nhất.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    Image.asset(
+                      'assets/flutter_banner.png', // Đặt hình ảnh mô tả bài post
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 200,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            // Xử lý Thích
+                          },
+                          icon: const Icon(Icons.thumb_up_alt_outlined),
+                          label: const Text('Thích'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            // Xử lý Bình luận
+                          },
+                          icon: const Icon(Icons.comment_outlined),
+                          label: const Text('Bình luận'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            // Xử lý Chia sẻ
+                          },
+                          icon: const Icon(Icons.share_outlined),
+                          label: const Text('Chia sẻ'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ];
-      },
-      body: ListView.builder(
-        itemCount: 50,  // Example post count
-        itemBuilder: (context, index) {
-          return ListTile(
-            leading: const Icon(Icons.person),
-            title: Text('Post #$index'),
-            subtitle:const Text('This is a post description'),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
+}
+
+void main() {
+  runApp(const MaterialApp(
+    home: HomeScreen(),
+  ));
 }

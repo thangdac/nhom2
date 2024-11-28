@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'video_screen.dart';  // Import VideoScreen
+import 'video_screen.dart'; // Import VideoScreen
 import 'account_screen.dart';
 import 'market_screen.dart';
 
@@ -16,18 +16,9 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<String> _videoAssets = [
     'assets/sample_video.mp4',
-    'assets/sample_video.mp4',
-    'assets/sample_video.mp4',
-    'assets/sample_video.mp4',
-  ];
-
-  // List of screens (you might need to modify this based on your logic)
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    // Modify this to use VideoScreen and pass a video asset
-    const VideoScreen(videoAsset: 'assets/sample_video.mp4'),
-    const AccountScreen(),
-    const MarketScreen(),
+    'assets/sample_video2.mp4',
+    'assets/sample_video3.mp4',
+    'assets/sample_video4.mp4',
   ];
 
   // Custom function to change the active and inactive colors for the BottomNavigationBar
@@ -35,22 +26,33 @@ class _MainScreenState extends State<MainScreen> {
     return _currentIndex == index ? Colors.blue : Colors.grey;
   }
 
+  Widget _getScreen(int index) {
+    switch (index) {
+      case 0:
+        return const HomeScreen();
+      case 1:
+        return VideoScreen(videoAssets: _videoAssets, initialIndex: 0);  // Correctly passing the videoAssets list
+      case 2:
+        return const AccountScreen();
+      case 3:
+        return const MarketScreen();
+      default:
+        return const HomeScreen();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Main Screen'),
+        title: const Text('NHOM 2 Facebook FAKE'),
       ),
-      body: _screens[_currentIndex],
+      body: _getScreen(_currentIndex),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
-            if (index == 1) {  // If Video Screen is tapped, set the right video asset
-              // Use a sample asset or a dynamic asset depending on your logic
-              _screens[1] = VideoScreen(videoAsset: _videoAssets[index]);
-            }
           });
         },
         items: [
