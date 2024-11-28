@@ -26,7 +26,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
   void _initializeController(String videoAsset) {
     // If the controller is already initialized, do nothing
-    //if (_controller != null && _controller!.value.isInitialized) return;
+    if (_controller != null && _controller!.value.isInitialized) return;
 
     _controller?.dispose(); // Dispose of any previous controller if it exists
     _controller = VideoPlayerController.asset(videoAsset)
