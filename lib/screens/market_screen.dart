@@ -1,4 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+// import 'package:facebook_interface/models/productPost.dart';
+import '../models/product_post.dart'; // Đường dẫn tới model productPost
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -9,54 +13,50 @@ class MarketScreen extends StatefulWidget {
 
 class _MarketScreenState extends State<MarketScreen> {
   final TextEditingController _searchController = TextEditingController();
+  List<productPost> _products = [];
+  List<productPost> _filteredProducts = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
 
-  List<String> _imageNames = [
-    'market_image/anh1.jpg',
-    'market_image/anh2.jpg',
-    'market_image/anh3.jpeg',
-    'market_image/anh4.webp',
-    'market_image/anh5.png',
-    'market_image/anh6.jpeg',
-  ];
-
-  List<String> _productNames = [
-    'Dong Ho',
-    'Giay Da',
-    'Mu',
-    'Mat Kinh',
-    'Ao 2 Day',
-    'Vay',
-  ];
-
-  List<String> _productDescriptions = [
-    'A stylish watch for every occasion.',
-    'Premium leather shoes for formal wear.',
-    'Trendy hats for sunny days.',
-    'High-quality sunglasses for UV protection.',
-    'Elegant camisole for casual wear.',
-    'Chic dress for a perfect evening.',
-  ];
-
-  List<int> _filteredIndexes = [];
+  Future<void> fetchProducts() async {
+    const String baseUrl = 'http://localhost:5019/api/ProductApi';
+    try {
+      final response = await http.get(Uri.parse(baseUrl));
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        setState(() {
+          _products = data.map((item) => productPost.fromJson(item)).toList();
+          _filteredProducts = _products;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorMessage = 'Failed to load products';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _filteredIndexes = List.generate(_productNames.length, (index) => index);
+    fetchProducts();
   }
 
   void _filterProducts(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredIndexes =
-            List.generate(_productNames.length, (index) => index);
+        _filteredProducts = _products;
       } else {
-        _filteredIndexes = _productNames
-            .asMap()
-            .entries
-            .where((entry) =>
-            entry.value.toLowerCase().contains(query.toLowerCase()))
-            .map((entry) => entry.key)
+        _filteredProducts = _products
+            .where((product) =>
+            product.name!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -83,7 +83,11 @@ class _MarketScreenState extends State<MarketScreen> {
         ),
         backgroundColor: Colors.blue,
       ),
-      body: GridView.builder(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+          ? Center(child: Text(_errorMessage))
+          : GridView.builder(
         padding: const EdgeInsets.all(8.0),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -91,23 +95,16 @@ class _MarketScreenState extends State<MarketScreen> {
           mainAxisSpacing: 8.0,
           crossAxisSpacing: 8.0,
         ),
-        itemCount: _filteredIndexes.length,
+        itemCount: _filteredProducts.length,
         itemBuilder: (context, index) {
-          int actualIndex = _filteredIndexes[index];
-          String imageName = _imageNames[actualIndex];
-          String productName = _productNames[actualIndex];
-          String productDescription = _productDescriptions[actualIndex];
-
+          productPost product = _filteredProducts[index];
           return GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ProductDetailScreen(
-                    imageName: imageName,
-                    productName: productName,
-                    productDescription: productDescription,
-                    price: '\$${(actualIndex + 1) * 10}',
+                    product: product,
                   ),
                 ),
               );
@@ -126,17 +123,20 @@ class _MarketScreenState extends State<MarketScreen> {
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12),
                       ),
-                      child: Image.asset(
-                        imageName,
+                      child: Image.network(
+                        product.image ?? '',
                         fit: BoxFit.cover,
                         width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.image_not_supported);
+                        },
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      productName,
+                      product.name ?? 'No name',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -144,9 +144,10 @@ class _MarketScreenState extends State<MarketScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(
-                      productDescription,
+                      product.description ?? 'No description',
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -158,7 +159,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      '\$${(actualIndex + 1) * 10}',
+                      '${product.price} VND',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -177,24 +178,15 @@ class _MarketScreenState extends State<MarketScreen> {
 }
 
 class ProductDetailScreen extends StatelessWidget {
-  final String imageName;
-  final String productName;
-  final String productDescription;
-  final String price;
+  final productPost product;
 
-  const ProductDetailScreen({
-    super.key,
-    required this.imageName,
-    required this.productName,
-    required this.productDescription,
-    required this.price,
-  });
+  const ProductDetailScreen({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(productName),
+        title: Text(product.name ?? 'Product Details'),
         backgroundColor: Colors.blue,
       ),
       body: Padding(
@@ -205,16 +197,19 @@ class ProductDetailScreen extends StatelessWidget {
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  imageName,
+                child: Image.network(
+                  product.image ?? '',
                   fit: BoxFit.cover,
                   width: MediaQuery.of(context).size.width * 0.8,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.image_not_supported, size: 100);
+                  },
                 ),
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              productName,
+              product.name ?? 'No name',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
@@ -222,14 +217,14 @@ class ProductDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              productDescription,
+              product.description ?? 'No description',
               style: const TextStyle(
                 fontSize: 16,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              price,
+              '${product.price} VND',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
