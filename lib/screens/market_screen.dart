@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-// import 'package:facebook_interface/models/productPost.dart';
 import '../models/product_post.dart'; // Đường dẫn tới model productPost
+import 'dart:async'; // Thêm import Timer
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -17,17 +17,20 @@ class _MarketScreenState extends State<MarketScreen> {
   List<productPost> _filteredProducts = [];
   bool _isLoading = true;
   String _errorMessage = '';
+  Timer? _debounce;
 
-  Future<void> fetchProducts() async {
-    const String baseUrl = 'http://localhost:5019/api/ProductApi';
+  // Fetch products from API
+  Future<void> fetchProducts({String query = ''}) async {
+    const String baseUrl = 'http://localhost:5019/api/ProductApi/search?name=';
     try {
-      final response = await http.get(Uri.parse(baseUrl));
+      final response = await http.get(Uri.parse(baseUrl + query));
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         setState(() {
           _products = data.map((item) => productPost.fromJson(item)).toList();
-          _filteredProducts = _products;
+          _filteredProducts = _products; // Filtered products updated after fetch
           _isLoading = false;
+          _errorMessage = ''; // Reset error message if successful
         });
       } else {
         setState(() {
@@ -46,18 +49,28 @@ class _MarketScreenState extends State<MarketScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProducts();
+    fetchProducts(); // Fetch all products when the screen is first loaded
   }
 
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  // Filter products based on the search query
   void _filterProducts(String query) {
-    setState(() {
+    // Cancel the previous debounce timer if there is one
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+
+    // Create a new timer for debounce to delay the API call
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       if (query.isEmpty) {
-        _filteredProducts = _products;
+        // If the search query is empty, fetch all products again
+        fetchProducts();
       } else {
-        _filteredProducts = _products
-            .where((product) =>
-            product.name!.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+        // If there is a search query, fetch products based on the query
+        fetchProducts(query: query);
       }
     });
   }
@@ -68,7 +81,7 @@ class _MarketScreenState extends State<MarketScreen> {
       appBar: AppBar(
         title: TextField(
           controller: _searchController,
-          onChanged: _filterProducts,
+          onChanged: _filterProducts, // Trigger search filter on change
           decoration: InputDecoration(
             hintText: 'Search products...',
             filled: true,
@@ -117,6 +130,7 @@ class _MarketScreenState extends State<MarketScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Product Image
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.only(
@@ -133,6 +147,7 @@ class _MarketScreenState extends State<MarketScreen> {
                       ),
                     ),
                   ),
+                  // Product Name
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -143,9 +158,9 @@ class _MarketScreenState extends State<MarketScreen> {
                       ),
                     ),
                   ),
+                  // Product Description
                   Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Text(
                       product.description ?? 'No description',
                       style: TextStyle(
@@ -156,6 +171,7 @@ class _MarketScreenState extends State<MarketScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  // Product Price
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -181,6 +197,36 @@ class ProductDetailScreen extends StatelessWidget {
   final productPost product;
 
   const ProductDetailScreen({super.key, required this.product});
+
+  // Add product to cart
+  void addToCart(BuildContext context) async {
+    final String userId = "33151CA4-FC24-4BE4-B4D4-B6B1852166EE"; // Change to your userId
+    final String apiUrl = 'http://localhost:5019/api/CartApi/user/$userId/product/${product.id}';
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'quantity': 1, // Number of products to add to cart
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${product.name} added to cart')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add to cart')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +276,13 @@ class ProductDetailScreen extends StatelessWidget {
                 fontSize: 20,
                 color: Colors.green,
               ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                addToCart(context);
+              },
+              child: const Text('Add to Cart'),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'home_screen.dart';
 import 'video_screen.dart'; // Import VideoScreen
 import 'account_screen.dart';
 import 'market_screen.dart';
+import 'cart_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -36,6 +37,8 @@ class _MainScreenState extends State<MainScreen> {
         return const AccountScreen();
       case 3:
         return const MarketScreen();
+      case 4:
+        return const CartScreen();
       default:
         return const HomeScreen();
     }
@@ -69,8 +72,12 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Account',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart, color: _getIconColor(3)),
+            icon: Icon(Icons.store, color: _getIconColor(3)),
             label: 'Market',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart, color: _getIconColor(4)),
+            label: 'Cart',
           ),
         ],
         type: BottomNavigationBarType.fixed,
